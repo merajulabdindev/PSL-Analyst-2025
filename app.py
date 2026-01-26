@@ -5,7 +5,7 @@ import random
 import time
 
 # --- 1. CONFIGURATION ---
-st.set_page_config(page_title="PSL 2025 Analyst", layout="wide", page_icon="🏏")
+st.set_page_config(page_title="PSL Analyst", layout="wide", page_icon="🏏")
 
 # --- 2. CSS STYLING ---
 custom_css = """
@@ -57,7 +57,7 @@ def calculate_squad_power(squad):
 
 # --- SIDEBAR ---
 st.sidebar.image("https://upload.wikimedia.org/wikipedia/en/1/14/Pakistan_Super_League_Logo.svg", width=150)
-st.sidebar.markdown("## 🏏 Analysis Hub")
+st.sidebar.markdown("## 🏏 PSL Analysis Hub")
 
 mode = st.sidebar.radio("", [
     "🏆 Match Simulator", 
