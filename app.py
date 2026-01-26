@@ -56,7 +56,7 @@ def calculate_squad_power(squad):
     return int(score)
 
 # --- SIDEBAR ---
-st.sidebar.image("https://upload.wikimedia.org/wikipedia/en/1/14/Pakistan_Super_League_Logo.svg", width=150)
+st.sidebar.image("https://www.geo.tv/assets/uploads/updates/2021-12-03/385763_1727813_updates.jpeg", width=150)
 st.sidebar.markdown("## 🏏 PSL Analysis Hub")
 
 mode = st.sidebar.radio("", [
