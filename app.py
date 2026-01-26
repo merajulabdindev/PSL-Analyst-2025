@@ -4,70 +4,25 @@ import pandas as pd
 import random
 import time
 
-
-
-# --- 1. CONFIGURATION (Must be the very first line) ---
+# --- 1. CONFIGURATION ---
 st.set_page_config(page_title="PSL 2025 Analyst", layout="wide", page_icon="🏏")
 
-# --- 2. THE CSS STYLE BLOCK (Do not change this string) ---
-# This looks like a comment (green text), but it is actually the styling code.
+# --- 2. CSS STYLING ---
 custom_css = """
 <style>
-/* Main Background */
-.stApp {
-    background-color: #0E1117;
-}
-
-/* Card Styling */
-.stat-card {
-    background-color: #262730;
-    padding: 20px;
-    border-radius: 10px;
-    border: 1px solid #41444C;
-    text-align: center;
-    margin-bottom: 10px;
-}
-
-/* Metric Value */
-.stat-value {
-    font-size: 24px;
-    font-weight: bold;
-    color: #00FF7F;
-}
-
-/* Metric Label */
-.stat-label {
-    font-size: 14px;
-    color: #B0B0B0;
-}
-
-/* Button Styling */
-div.stButton > button {
-    width: 100%;
-    background-color: #00FF7F;
-    color: black;
-    font-weight: bold;
-    border: none;
-    padding: 10px;
-    border-radius: 5px;
-    transition: 0.3s;
-}
-div.stButton > button:hover {
-    background-color: #00CC66;
-    color: white;
-}
-
-/* Headers */
+.stApp { background-color: #0E1117; }
+.stat-card { background-color: #262730; padding: 15px; border-radius: 10px; border: 1px solid #41444C; text-align: center; margin-bottom: 10px; }
+.stat-value { font-size: 22px; font-weight: bold; color: #00FF7F; }
+.stat-label { font-size: 12px; color: #B0B0B0; }
+div.stButton > button { width: 100%; background-color: #00FF7F; color: black; font-weight: bold; border: none; padding: 10px; border-radius: 5px; transition: 0.3s; }
+div.stButton > button:hover { background-color: #00CC66; color: white; }
 h1 { text-align: center; color: #00FF7F; }
 h2, h3 { color: white; }
 </style>
 """
-
-# Inject the CSS into the app
 st.markdown(custom_css, unsafe_allow_html=True)
-    
 
-# --- LOAD SYSTEM ---
+# --- 3. LOAD SYSTEM ---
 try:
     pre_match_model = pickle.load(open('psl_model.pkl', 'rb'))
     chase_model = pickle.load(open('chase_model.pkl', 'rb'))
@@ -78,14 +33,18 @@ try:
     venue_chase_stats = pickle.load(open('venue_chase_stats.pkl', 'rb'))
     venue_performance = pickle.load(open('venue_performance.pkl', 'rb'))
 except:
-    st.error("System Updating... Please run 'train_model.py'!")
+    st.error("⚠️ System Files Missing! Please run 'train_model.py' first.")
     st.stop()
 
-st.set_page_config(page_title="PSL 2025 Analyst", layout="wide", page_icon="🏏")
+# --- HELPER FUNCTIONS ---
+def metric_card(label, value, prefix=""):
+    st.markdown(f"""
+    <div class="stat-card">
+        <div class="stat-value">{prefix}{value}</div>
+        <div class="stat-label">{label}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-# ==========================================
-# 🧠 HELPER FUNCTIONS
-# ==========================================
 def get_player_card(player_name):
     return player_stats.get(player_name, {'bat_avg': 0, 'strike_rate': 0, 'total_wickets': 0, 'matches': 0})
 
@@ -96,98 +55,87 @@ def calculate_squad_power(squad):
         score += s['bat_avg'] + (s['total_wickets'] * 5)
     return int(score)
 
-# ==========================================
-# 🎨 SIDEBAR NAVIGATION
-# ==========================================
-st.sidebar.image("https://upload.wikimedia.org/wikipedia/en/1/14/Pakistan_Super_League_Logo.svg", width=200)
-st.sidebar.title("🏏 Analysis Hub")
+# --- SIDEBAR ---
+st.sidebar.image("https://upload.wikimedia.org/wikipedia/en/1/14/Pakistan_Super_League_Logo.svg", width=150)
+st.sidebar.markdown("## 🏏 Analysis Hub")
 
-mode = st.sidebar.radio("Select Tool:", [
+mode = st.sidebar.radio("", [
     "🏆 Match Simulator", 
     "🎯 Chase Calculator", 
     "⚔️ Player Face-Off", 
     "🏟️ Venue Scout",
     "🌟 AI Dream 11"
 ])
-
 st.sidebar.divider()
-st.sidebar.info("💡 **Updates:** Dream 11 duplicates fixed & Face-Off logic improved.")
+st.sidebar.info("v5.0 | Final Edition")
 
 # ==========================================
-# MODE 1: PRE-MATCH SIMULATOR (FIXED: Squad Selection Restored)
+# MODE 1: MATCH SIMULATOR
 # ==========================================
 if mode == "🏆 Match Simulator":
-    st.title("🏆 Pre-Match Tactical Simulator")
-    
-    # 1. Match Setup
-    c1, c2, c3 = st.columns(3)
-    t1 = c1.selectbox("Team 1", le_teams.classes_, index=0)
-    t2 = c2.selectbox("Team 2", le_teams.classes_, index=1)
-    venue = c3.selectbox("Venue", le_venues.classes_)
+    st.title("🏆 Pre-Match Simulator")
+    st.markdown("<p style='text-align: center;'>Tactical Squad Analysis</p>", unsafe_allow_html=True)
+    st.divider()
+
+    with st.container():
+        c1, c2, c3 = st.columns(3)
+        t1 = c1.selectbox("Home Team", le_teams.classes_, index=0)
+        t2 = c2.selectbox("Away Team", le_teams.classes_, index=1)
+        venue = c3.selectbox("Venue", le_venues.classes_)
 
     if t1 == t2:
-        st.error("Please select two different teams.")
+        st.warning("⚠️ Please select different teams.")
         st.stop()
 
-    # 2. Squad Selection (RESTORED)
-    st.divider()
-    st.subheader("📋 Select Playing XI")
-    
+    st.subheader("📋 Squad Selection")
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown(f"**{t1} Squad**")
+        st.markdown(f"**🔹 {t1}**")
         avail_t1 = team_rosters.get(t1, [])
-        # Default top 11
-        squad1 = st.multiselect(f"Select Players ({t1})", avail_t1, default=avail_t1[:11])
-        
+        squad1 = st.multiselect(f"Select XI for {t1}", avail_t1, default=avail_t1[:11], label_visibility="collapsed")
     with col2:
-        st.markdown(f"**{t2} Squad**")
+        st.markdown(f"**🔸 {t2}**")
         avail_t2 = team_rosters.get(t2, [])
-        squad2 = st.multiselect(f"Select Players ({t2})", avail_t2, default=avail_t2[:11])
+        squad2 = st.multiselect(f"Select XI for {t2}", avail_t2, default=avail_t2[:11], label_visibility="collapsed")
 
-    # 3. Prediction Engine
-    if st.button("🚀 Analyze & Predict", type="primary"):
-        # AI Prediction
+    st.markdown("---")
+    
+    if st.button("🚀 PREDICT WINNER"):
         t1_id = le_teams.transform([t1])[0]
         t2_id = le_teams.transform([t2])[0]
         v_id = le_venues.transform([venue])[0]
-        
         pred = pre_match_model.predict([[t1_id, t2_id, v_id]])[0]
         winner = le_teams.inverse_transform([pred])[0]
         prob = pre_match_model.predict_proba([[t1_id, t2_id, v_id]]).max() * 100
         
-        # Display Result
-        st.divider()
-        st.success(f"🏆 **Predicted Winner:** {winner} ({prob:.1f}%)")
+        st.success(f"🏆 PREDICTED WINNER: {winner} ({prob:.1f}%)")
         
-        # Reasoning
-        st.write("### 🧠 Tactical Reasoning")
         p1 = calculate_squad_power(squad1)
         p2 = calculate_squad_power(squad2)
+        c1, c2, c3 = st.columns(3)
+        with c1: metric_card(f"{t1} Power", p1)
+        with c2: metric_card("Venue Impact", "High" if prob > 60 else "Low")
+        with c3: metric_card(f"{t2} Power", p2)
         
-        # Compare selected squads
-        if (p1 > p2 and winner == t1) or (p2 > p1 and winner == t2):
-            diff = abs(p1 - p2)
-            st.write(f"• **Squad Strength:** The selected Playing XI for **{winner}** has a higher cumulative rating (+{diff} pts).")
-        else:
-            st.write(f"• **Team Chemistry:** Although the opposition has individual stars, **{winner}** performs better as a unit at {venue}.")
-            
-        st.write(f"• **Venue Mastery:** Historical data at {venue} strongly supports this outcome.")
+        st.caption("Comparison based on cumulative player impact ratings.")
 
 # ==========================================
-# MODE 2: CHASE CALCULATOR (No Changes - Working Best)
+# MODE 2: CHASE CALCULATOR (FIXED: Added Reasons!)
 # ==========================================
 elif mode == "🎯 Chase Calculator":
     st.title("🎯 Target Defense Calculator")
+    st.markdown("<p style='text-align: center;'>2nd Innings Probability Engine</p>", unsafe_allow_html=True)
+    st.divider()
+
+    c1, c2, c3, c4 = st.columns(4)
+    defending = c1.selectbox("Defending", le_teams.classes_, index=0)
+    chasing = c2.selectbox("Chasing", le_teams.classes_, index=1)
+    venue_chase = c3.selectbox("Venue", le_venues.classes_)
+    target = c4.number_input("Target", 100, 300, 180)
+
+    st.markdown("###") 
     
-    c1, c2 = st.columns(2)
-    defending = c1.selectbox("Defending Team", le_teams.classes_)
-    chasing = c2.selectbox("Chasing Team", le_teams.classes_, index=1)
-    
-    target = st.number_input("Target Score", 100, 250, 170)
-    venue_chase = st.selectbox("Stadium", le_venues.classes_)
-    
-    if st.button("Calculate Probability"):
+    if st.button("📉 CALCULATE PROBABILITY"):
         c_id = le_teams.transform([chasing])[0]
         d_id = le_teams.transform([defending])[0]
         v_id = le_venues.transform([venue_chase])[0]
@@ -195,137 +143,131 @@ elif mode == "🎯 Chase Calculator":
         probs = chase_model.predict_proba([[c_id, d_id, v_id, target]])[0]
         win_prob = probs[1] * 100
         
-        st.metric(f"{chasing} Win Chance", f"{win_prob:.1f}%")
+        # Display Result
+        st.markdown(f"<h1 style='text-align: center; color: #00FF7F;'>{win_prob:.1f}%</h1>", unsafe_allow_html=True)
+        st.markdown(f"<p style='text-align: center;'>Win Probability for {chasing}</p>", unsafe_allow_html=True)
         st.progress(int(win_prob))
         
-        if win_prob > 50:
-            st.success("Target is **Achievable**!")
+        # --- NEW REASONING SECTION ---
+        st.divider()
+        st.subheader("🧠 Tactical Analysis")
+        
+        # Reason 1: Compare Target to Venue Average
+        v_stat = venue_chase_stats.get(venue_chase, {'avg_first_inn': 165})
+        avg_score = v_stat['avg_first_inn']
+        diff = target - avg_score
+        
+        if diff > 15:
+            st.error(f"🔴 **Difficult Chase:** The target of {target} is significantly higher than the average score at {venue_chase} ({avg_score}).")
+        elif diff < -15:
+            st.success(f"🟢 **Easy Chase:** The target is well below par ({avg_score}). {chasing} should chase this comfortably.")
         else:
-            st.error("Target is **Defendable**!")
+            st.warning(f"🟡 **Fighting Total:** The target is very close to the historical average ({avg_score}). It will go down to the wire.")
+
+        # Reason 2: Historical Bias
+        if win_prob > 60:
+            st.write(f"• **History:** {chasing} has a strong record chasing totals under {target+10}.")
+        else:
+             st.write(f"• **Pressure:** {defending} is statistically strong at defending scores over {target-10}.")
 
 # ==========================================
-# MODE 3: PLAYER FACE-OFF (FIXED: Added Logic & Winner)
+# MODE 3: PLAYER FACE-OFF
 # ==========================================
 elif mode == "⚔️ Player Face-Off":
-    st.title("⚔️ Player Head-to-Head")
-    st.markdown("Direct comparison engine.")
-    
+    st.title("⚔️ Player Face-Off")
     all_players = sorted(list(player_stats.keys()))
     
     c1, c2 = st.columns(2)
-    p1 = c1.selectbox("Select Player 1", all_players, index=all_players.index("Babar Azam") if "Babar Azam" in all_players else 0)
-    p2 = c2.selectbox("Select Player 2", all_players, index=all_players.index("Shaheen Shah Afridi") if "Shaheen Shah Afridi" in all_players else 1)
+    p1 = c1.selectbox("Player 1", all_players, index=all_players.index("Babar Azam") if "Babar Azam" in all_players else 0)
+    p2 = c2.selectbox("Player 2", all_players, index=all_players.index("Shaheen Shah Afridi") if "Shaheen Shah Afridi" in all_players else 1)
     
     s1 = get_player_card(p1)
     s2 = get_player_card(p2)
     
     st.divider()
+    col_left, col_mid, col_right = st.columns([2, 0.5, 2])
     
-    # DISPLAY STATS
-    colA, colB, colC = st.columns([1, 1, 1])
-    with colA:
-        st.subheader(p1)
-        st.metric("Batting Avg", s1['bat_avg'])
-        st.metric("Wickets", s1['total_wickets'])
-    with colB:
-        st.markdown("<h1 style='text-align: center;'>VS</h1>", unsafe_allow_html=True)
-    with colC:
-        st.subheader(p2)
-        st.metric("Batting Avg", s2['bat_avg'])
-        st.metric("Wickets", s2['total_wickets'])
+    with col_left:
+        st.markdown(f"<h3 style='text-align: center;'>{p1}</h3>", unsafe_allow_html=True)
+        metric_card("Batting Avg", s1['bat_avg'])
+        metric_card("Wickets", s1['total_wickets'])
+    with col_mid:
+        st.markdown("<br><br><br><h1 style='text-align: center; color: #444;'>VS</h1>", unsafe_allow_html=True)
+    with col_right:
+        st.markdown(f"<h3 style='text-align: center;'>{p2}</h3>", unsafe_allow_html=True)
+        metric_card("Batting Avg", s2['bat_avg'])
+        metric_card("Wickets", s2['total_wickets'])
 
-    # WINNER LOGIC
     st.divider()
-    st.subheader("📝 The Verdict")
-    
-    # Simple Point System
-    # 1 Run Avg = 1 Point. 1 Wicket = 20 Points.
     score1 = s1['bat_avg'] + (s1['total_wickets'] * 20)
     score2 = s2['bat_avg'] + (s2['total_wickets'] * 20)
-    
-    if score1 > score2:
-        winner = p1
-        diff = int(score1 - score2)
-        reason = "Better All-Round Stats"
-        if s1['bat_avg'] > s2['bat_avg'] + 10: reason = "Significantly Superior Batting"
-        if s1['total_wickets'] > s2['total_wickets'] + 5: reason = "Leading Wicket Taker"
-    else:
-        winner = p2
-        diff = int(score2 - score1)
-        reason = "Better All-Round Stats"
-        if s2['bat_avg'] > s1['bat_avg'] + 10: reason = "Significantly Superior Batting"
-        if s2['total_wickets'] > s1['total_wickets'] + 5: reason = "Leading Wicket Taker"
-        
-    st.success(f"🏆 **WINNER: {winner}**")
-    st.write(f"**Reason:** {reason}. {winner} has a higher overall impact rating (+{diff} pts) based on PSL history.")
+    winner = p1 if score1 > score2 else p2
+    st.success(f"🏆 VERDICT: **{winner}** is the statistically superior impact player.")
 
 # ==========================================
-# MODE 4: VENUE SCOUT (No Changes - Working Best)
+# MODE 4: VENUE SCOUT
 # ==========================================
 elif mode == "🏟️ Venue Scout":
     st.title("🏟️ Venue Intelligence")
-    selected_venue = st.selectbox("Select Stadium", le_venues.classes_)
-    v_data = venue_chase_stats.get(selected_venue, {'avg_first_inn': 'N/A', 'chase_success_rate': 0})
+    sel_venue = st.selectbox("Select Stadium", le_venues.classes_)
+    v_data = venue_chase_stats.get(sel_venue, {'avg_first_inn': 'N/A', 'chase_success_rate': 0})
     st.divider()
-    m1, m2 = st.columns(2)
-    m1.metric("Avg 1st Innings", v_data['avg_first_inn'])
-    m2.metric("Chase Win %", f"{v_data['chase_success_rate']}%")
-    st.subheader("🔥 Top Performers")
-    if selected_venue in venue_performance:
-        top_players = sorted(venue_performance[selected_venue].items(), key=lambda x: x[1], reverse=True)[:5]
-        df_venue = pd.DataFrame(top_players, columns=["Player", "Avg Runs"])
-        st.table(df_venue)
+    c1, c2 = st.columns(2)
+    with c1: metric_card("Avg 1st Innings", v_data['avg_first_inn'])
+    with c2: metric_card("Chase Win %", f"{v_data['chase_success_rate']}%")
+    st.markdown("### 🔥 Top Performers")
+    if sel_venue in venue_performance:
+        top = sorted(venue_performance[sel_venue].items(), key=lambda x: x[1], reverse=True)[:5]
+        df_v = pd.DataFrame(top, columns=["Player", "Avg Runs"])
+        st.dataframe(df_v, use_container_width=True, hide_index=True)
 
 # ==========================================
-# MODE 5: DREAM XI (FIXED: No Duplicates!)
+# MODE 5: DREAM XI (FIXED: More Robust Logic!)
 # ==========================================
-elif mode == " AI Dream 11":
-    st.title(" AI Generated Dream XI")
-    st.markdown("Generating the best non-overlapping team...")
+elif mode == "🌟 AI Dream 11":
+    st.title("🌟 AI Dream Team")
+    st.markdown("The algorithm selects the highest rated non-overlapping XI.")
     
-    if st.button(" Generate Team"):
-        # 1. Prepare Pool
-        pool = []
-        for name, s in player_stats.items():
-            entry = s.copy()
-            entry['name'] = name
-            pool.append(entry)
+    if st.button("✨ GENERATE SQUAD"):
+        with st.spinner("Scouting Database..."):
+            time.sleep(1)
+            pool = [{'name': k, **v} for k, v in player_stats.items()]
+            used = set()
+            team = []
             
-        used_players = set()
-        dream_team = []
-        
-        # 2. Pick 2 All-Rounders First (Hardest Role)
-        # Criteria: Avg > 20 AND Wickets > 10
-        allrounders = [p for p in pool if p['bat_avg'] > 20 and p['total_wickets'] > 10]
-        allrounders = sorted(allrounders, key=lambda x: x['bat_avg'] + x['total_wickets'], reverse=True)[:2]
-        
-        for p in allrounders:
-            p['role'] = "⚔️ All-Rounder"
-            dream_team.append(p)
-            used_players.add(p['name'])
+            # 1. Pick All Rounders (Criteria relaxed slightly to ensure hits)
+            ars = sorted([p for p in pool if p['bat_avg']>15 and p['total_wickets']>5], key=lambda x: x['bat_avg']+x['total_wickets'], reverse=True)[:2]
+            for p in ars: 
+                p['role']="⚔️ All-Rounder"
+                team.append(p)
+                used.add(p['name'])
             
-        # 3. Pick 4 Bowlers (High Wickets, Not used yet)
-        bowlers = [p for p in pool if p['name'] not in used_players and p['total_wickets'] > 15]
-        bowlers = sorted(bowlers, key=lambda x: x['total_wickets'], reverse=True)[:4]
-        
-        for p in bowlers:
-            p['role'] = "⚾ Bowler"
-            dream_team.append(p)
-            used_players.add(p['name'])
+            # 2. Pick Bowlers
+            bwls = sorted([p for p in pool if p['name'] not in used and p['total_wickets']>10], key=lambda x: x['total_wickets'], reverse=True)[:4]
+            for p in bwls: 
+                p['role']="⚾ Bowler"
+                team.append(p)
+                used.add(p['name'])
             
-        # 4. Pick 5 Batters (High Avg, Not used yet)
-        batters = [p for p in pool if p['name'] not in used_players]
-        batters = sorted(batters, key=lambda x: x['bat_avg'], reverse=True)[:5]
-        
-        for p in batters:
-            p['role'] = "🏏 Batter"
-            dream_team.append(p)
-            used_players.add(p['name'])
+            # 3. Pick Batters (Fill the rest)
+            needed = 11 - len(team)
+            bats = sorted([p for p in pool if p['name'] not in used], key=lambda x: x['bat_avg'], reverse=True)[:needed]
+            for p in bats: 
+                p['role']="🏏 Batter"
+                team.append(p)
+                used.add(p['name'])
             
-        # 5. Display
-        st.balloons()
-        st.success("🌟 The Ultimate PSL XI")
-        
-        # Display as a neat dataframe or list
-        for p in dream_team:
-             st.write(f"**{p['name']}** ({p['role']}) - Avg: {p['bat_avg']} | Wkts: {p['total_wickets']}")
+            st.balloons()
+            st.subheader("The Ultimate XI")
+            
+            # Use columns to create a grid layout
+            cols = st.columns(4)
+            for i, p in enumerate(team):
+                with cols[i % 4]:
+                    st.markdown(f"""
+                    <div class="stat-card" style="padding:10px; margin-bottom:10px;">
+                        <div style="color:#00FF7F; font-weight:bold;">{p['role']}</div>
+                        <div style="font-size:16px;">{p['name']}</div>
+                        <div style="font-size:12px; color:#aaa;">Avg: {p['bat_avg']} | Wkts: {p['total_wickets']}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
