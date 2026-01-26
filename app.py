@@ -60,11 +60,11 @@ st.sidebar.image("https://www.geo.tv/assets/uploads/updates/2021-12-03/385763_17
 st.sidebar.markdown("## 🏏 PSL Analysis Hub")
 
 mode = st.sidebar.radio("", [
-    "🏆 Match Simulator", 
-    "🎯 Chase Calculator", 
-    "⚔️ Player Face-Off", 
-    "🏟️ Venue Scout",
-    "🌟 AI Dream 11"
+    " Match Simulator", 
+    " Chase Calculator", 
+    " Player Face-Off", 
+    " Venue Scout",
+    " AI Dream 11"
 ])
 st.sidebar.divider()
 st.sidebar.info("v5.0 | Final Edition")
@@ -72,8 +72,8 @@ st.sidebar.info("v5.0 | Final Edition")
 # ==========================================
 # MODE 1: MATCH SIMULATOR
 # ==========================================
-if mode == "🏆 Match Simulator":
-    st.title("🏆 Pre-Match Simulator")
+if mode == " Match Simulator":
+    st.title(" Pre-Match Simulator")
     st.markdown("<p style='text-align: center;'>Tactical Squad Analysis</p>", unsafe_allow_html=True)
     st.divider()
 
@@ -100,7 +100,7 @@ if mode == "🏆 Match Simulator":
 
     st.markdown("---")
     
-    if st.button("🚀 PREDICT WINNER"):
+    if st.button(" PREDICT WINNER"):
         t1_id = le_teams.transform([t1])[0]
         t2_id = le_teams.transform([t2])[0]
         v_id = le_venues.transform([venue])[0]
@@ -108,7 +108,7 @@ if mode == "🏆 Match Simulator":
         winner = le_teams.inverse_transform([pred])[0]
         prob = pre_match_model.predict_proba([[t1_id, t2_id, v_id]]).max() * 100
         
-        st.success(f"🏆 PREDICTED WINNER: {winner} ({prob:.1f}%)")
+        st.success(f" PREDICTED WINNER: {winner} ({prob:.1f}%)")
         
         p1 = calculate_squad_power(squad1)
         p2 = calculate_squad_power(squad2)
@@ -122,8 +122,8 @@ if mode == "🏆 Match Simulator":
 # ==========================================
 # MODE 2: CHASE CALCULATOR (FIXED: Added Reasons!)
 # ==========================================
-elif mode == "🎯 Chase Calculator":
-    st.title("🎯 Target Defense Calculator")
+elif mode == " Chase Calculator":
+    st.title(" Target Defense Calculator")
     st.markdown("<p style='text-align: center;'>2nd Innings Probability Engine</p>", unsafe_allow_html=True)
     st.divider()
 
@@ -150,7 +150,7 @@ elif mode == "🎯 Chase Calculator":
         
         # --- NEW REASONING SECTION ---
         st.divider()
-        st.subheader("🧠 Tactical Analysis")
+        st.subheader(" Tactical Analysis")
         
         # Reason 1: Compare Target to Venue Average
         v_stat = venue_chase_stats.get(venue_chase, {'avg_first_inn': 165})
@@ -173,8 +173,8 @@ elif mode == "🎯 Chase Calculator":
 # ==========================================
 # MODE 3: PLAYER FACE-OFF
 # ==========================================
-elif mode == "⚔️ Player Face-Off":
-    st.title("⚔️ Player Face-Off")
+elif mode == " Player Face-Off":
+    st.title(" Player Face-Off")
     all_players = sorted(list(player_stats.keys()))
     
     c1, c2 = st.columns(2)
@@ -202,20 +202,20 @@ elif mode == "⚔️ Player Face-Off":
     score1 = s1['bat_avg'] + (s1['total_wickets'] * 20)
     score2 = s2['bat_avg'] + (s2['total_wickets'] * 20)
     winner = p1 if score1 > score2 else p2
-    st.success(f"🏆 VERDICT: **{winner}** is the statistically superior impact player.")
+    st.success(f" VERDICT: **{winner}** is the statistically superior impact player.")
 
 # ==========================================
 # MODE 4: VENUE SCOUT
 # ==========================================
-elif mode == "🏟️ Venue Scout":
-    st.title("🏟️ Venue Intelligence")
+elif mode == " Venue Scout":
+    st.title(" Venue Intelligence")
     sel_venue = st.selectbox("Select Stadium", le_venues.classes_)
     v_data = venue_chase_stats.get(sel_venue, {'avg_first_inn': 'N/A', 'chase_success_rate': 0})
     st.divider()
     c1, c2 = st.columns(2)
     with c1: metric_card("Avg 1st Innings", v_data['avg_first_inn'])
     with c2: metric_card("Chase Win %", f"{v_data['chase_success_rate']}%")
-    st.markdown("### 🔥 Top Performers")
+    st.markdown("###  Top Performers")
     if sel_venue in venue_performance:
         top = sorted(venue_performance[sel_venue].items(), key=lambda x: x[1], reverse=True)[:5]
         df_v = pd.DataFrame(top, columns=["Player", "Avg Runs"])
@@ -224,11 +224,11 @@ elif mode == "🏟️ Venue Scout":
 # ==========================================
 # MODE 5: DREAM XI (FIXED: More Robust Logic!)
 # ==========================================
-elif mode == "🌟 AI Dream 11":
-    st.title("🌟 AI Dream Team")
+elif mode == " AI Dream 11":
+    st.title(" AI Dream Team")
     st.markdown("The algorithm selects the highest rated non-overlapping XI.")
     
-    if st.button("✨ GENERATE SQUAD"):
+    if st.button(" GENERATE SQUAD"):
         with st.spinner("Scouting Database..."):
             time.sleep(1)
             pool = [{'name': k, **v} for k, v in player_stats.items()]
@@ -238,14 +238,14 @@ elif mode == "🌟 AI Dream 11":
             # 1. Pick All Rounders (Criteria relaxed slightly to ensure hits)
             ars = sorted([p for p in pool if p['bat_avg']>15 and p['total_wickets']>5], key=lambda x: x['bat_avg']+x['total_wickets'], reverse=True)[:2]
             for p in ars: 
-                p['role']="⚔️ All-Rounder"
+                p['role']=" All-Rounder"
                 team.append(p)
                 used.add(p['name'])
             
             # 2. Pick Bowlers
             bwls = sorted([p for p in pool if p['name'] not in used and p['total_wickets']>10], key=lambda x: x['total_wickets'], reverse=True)[:4]
             for p in bwls: 
-                p['role']="⚾ Bowler"
+                p['role']=" Bowler"
                 team.append(p)
                 used.add(p['name'])
             
@@ -253,7 +253,7 @@ elif mode == "🌟 AI Dream 11":
             needed = 11 - len(team)
             bats = sorted([p for p in pool if p['name'] not in used], key=lambda x: x['bat_avg'], reverse=True)[:needed]
             for p in bats: 
-                p['role']="🏏 Batter"
+                p['role']=" Batter"
                 team.append(p)
                 used.add(p['name'])
             
